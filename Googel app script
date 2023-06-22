@@ -1,0 +1,42 @@
+function onEdit(e) {
+  var sheet = e.source.getActiveSheet();
+  var range = e.range;
+
+  // Specify the checkbox range where the automation should be triggered
+  var checkboxRange = "C1"; // Change to the cell reference of your checkbox
+
+  // Specify the data range to be sent when the checkbox is checked
+  var dataRange = "A1:B2"; // Change to the desired range
+
+  // Check if the edited range is the checkbox range
+  if (
+    range.getA1Notation() === checkboxRange &&
+    sheet.getName() === "REPRT" &&
+    range.isChecked()
+  ) {
+    sendRangeByEmail(e.source, dataRange);
+  }
+}
+
+function sendRangeByEmail(spreadsheet, rangeAddress) {
+  var sheet = spreadsheet.getActiveSheet();
+  var range = sheet.getRange(rangeAddress);
+  var values = range.getDisplayValues();
+
+  var recipient = "vivashko1710@gmail.com"; // Change to the email address you want to send the range to
+  var subject = "TestMail";
+  var body = "Hello:\n\n" + convertRangeToTable(values);
+
+  GmailApp.sendEmail(recipient, subject, body);
+}
+
+function convertRangeToTable(rangeValues) {
+  var table = "";
+  for (var row = 0; row < rangeValues.length; row++) {
+    for (var col = 0; col < rangeValues[row].length; col++) {
+      table += rangeValues[row][col] + "\t";
+    }
+    table += "\n";
+  }
+  return table;
+}
