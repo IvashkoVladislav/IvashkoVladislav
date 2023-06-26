@@ -1,0 +1,113 @@
+import gspread
+import time
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from oauth2client.service_account import ServiceAccountCredentials
+from gspread.httpsession import HTTPError
+
+
+# Function to handle checkbox click event
+def on_checkbox_click(event):
+    # Get the row and column indices of the clicked checkbox
+    row = event.range.row
+    col = event.range.column
+
+    # Check if the checkbox was checked (True)
+    if event.value:
+        # Prompt a confirmation dialog box
+        response = input("Hold Up!\n Are you sure you want to send an email to CRTraders? (y/n) ")
+        if response == 'y':
+            # Get the data from the source sheet
+            data = worksheet.row_values(row)
+
+            # Copy the data to the destination sheet
+            dest_sheet.append_row(data)
+
+            # Send an email notification
+            send_email_notification(data)
+
+# Function to send email notification
+def send_email_notification(data):
+    try:
+        # Set up email message
+        assetname = data[0]
+        owner = data[2]
+        serial = data[8]
+        podate = data[5]
+
+        message = MIMEMultipart()
+        message['Subject'] = 'Test email via GoogleSheetsAPI!'
+        message['From'] = 'vivashko1710@gmail.com'
+        message['To'] = 'vivashko1710@gmail.com'
+
+        body = f'''\
+        <html>
+          <head></head>
+          <body>
+            <div style="margin-left:40px;">Heads Up!</div>
+            <br><br>
+            <div style="margin-left:40px;">An asset has changed department ownership.</div>
+            <br><br>
+            <div style="margin-left:40px;"><h3 style="text-decoration: underline;">Asset Name:{assetname}</h3></div>
+            <div style="margin-left:40px;">New Department Owner: {owner}</div><br>
+            <div style="margin-left:40px;">Serial: {serial}</div>
+            <div style="margin-left:40px;">Purchase Date: {podate}</div>
+            <br><br>
+            <div style="margin-left:40px;">ヽ(⌐■_■)ノ♪♬</div>
+          </body>
+        </html>
+        '''
+        message.attach(MIMEText(body, 'html'))
+
+        # Send email
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login('vivashko1710@gmail.com', 'password')
+        server.sendmail('vivashko1710@gmail.com', 'vivashko1710@gmail.com', message.as_string())
+        server.quit()
+    except Exception as e:
+        print("Error occurred while sending email: ", e)
+
+# Set up Google Sheets API credentials
+#creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Users/vivas/credentials.json', ['https://www.googleapis.com/auth/spreadsheets'])
+
+# Set up Google Sheets API credentials
+creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Users/vivas/credentials.json', ['https://www.googleapis.com/auth/spreadsheets'])
+
+
+try:
+    # Authorize the credentials
+    client = gspread.authorize(credentials)
+
+    # Open the spreadsheet
+    spreadsheet = client.open('VIX Futures')
+
+    # Get the source sheet
+    source_sheet = spreadsheet.worksheet('REPRT')
+
+    # Perform further operations with the source sheet
+    # ...
+
+except HTTPError as e:
+    # Extract and display the error details
+    error_msg = f"HTTP Error occurred: Status Code={e.response.status}, Reason={e.response.reason}"
+    print(error_msg)
+
+except Exception as e:
+    # Handle other exceptions
+    print("An error occurred:", e)
+
+# Authorize the credentials with the new Google account
+client = gspread.authorize(creds)
+
+# Get the source sheet
+source_sheet = client.open('VIX Futures').worksheet('REPRT')
+
+# Connect to Google Sheets API
+spreadsheet = client.open('VIX Futures')
+worksheet = spreadsheet.sheet1
+dest_sheet = spreadsheet.worksheet('Statistics')
+
+# Create a trigger for checkbox clicks
+source_sheet.on_change(on_checkbox_click)
