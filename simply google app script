@@ -1,0 +1,55 @@
+function sendEmailWithData() {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getActiveSheet();
+  
+  // Get the data range you want to include in the email
+  var dataRange = sheet.getDataRange();
+  var dataValues = dataRange.getValues();
+  
+  // Convert the data to HTML table format
+  var htmlTable = convertDataToHTMLTable(dataValues);
+  
+  // Email details
+  var recipient = "vivashko1710@gmail.com"; // Change to the email address you want to send the data to
+  var subject = "script-tests";
+  var body = "Please find the data from the website below:<br><br>" + htmlTable;
+  
+  // Send the email
+  GmailApp.sendEmail(recipient, subject, "", {htmlBody: body});
+}
+
+function convertDataToHTMLTable(dataValues) {
+  var html = "<table style='border-collapse: collapse;'>";
+  for (var i = 0; i < dataValues.length; i++) {
+    html += "<tr>";
+    for (var j = 0; j < dataValues[i].length; j++) {
+      html += "<td style='border: 1px solid black; padding: 5px;'>" + dataValues[i][j] + "</td>";
+    }
+    html += "</tr>";
+  }
+  html += "</table>";
+  return html;
+}
+
+///
+Here's how you can use this code:
+
+Open your Google Sheet.
+In the script editor, create a new function called sendEmailWithData.
+Copy and paste the code provided above into the sendEmailWithData function.
+Customize the email details: recipient (email address), subject, and the body of the email as needed.
+Save the script.
+Run the sendEmailWithData function manually to test if the email is sent correctly.
+To automate the email sending, you can set up a time-based trigger to run the sendEmailWithData function at a specific interval. Here's how to set up the trigger:
+
+In the script editor, click on the "Triggers" icon (clock-shaped) in the toolbar.
+Click on the "+ Add Trigger" button.
+In the dialog that appears, configure the trigger settings:
+Choose the sendEmailWithData function from the dropdown.
+Select the desired time-based trigger type (e.g., "Time-driven," "Day timer," etc.).
+Set the desired interval (e.g., daily, hourly, etc.).
+Click "Save" to create the trigger.
+Once the trigger is set up, the sendEmailWithData function will automatically run at the specified interval, sending an email with the data from the Google Sheet.
+
+Note: Make sure you have the necessary permissions and authorizations to access Gmail and the Google Sheet associated with the script.
+///
