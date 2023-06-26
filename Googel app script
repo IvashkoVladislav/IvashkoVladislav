@@ -11,7 +11,7 @@ function onEdit(e) {
   // Check if the edited range is the checkbox range
   if (
     range.getA1Notation() === checkboxRange &&
-    sheet.getName() === "REPRT" &&
+    sheet.getName() === "REPRT" && // Change to table name
     range.isChecked()
   ) {
     sendRangeByEmail(e.source, dataRange);
