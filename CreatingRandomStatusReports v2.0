@@ -1,0 +1,89 @@
+/// The same stuff that report with random values just insted of vlues line graphs ///
+
+import random
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.font_manager import FontProperties
+
+def generate_random_values(n):
+    values = []
+    for i in range(n):
+        values.append(random.uniform(0, 10))
+    return values
+
+
+def combine_values(values1, values2, values3, values4, values5, values6):
+    combined_values = []
+    for i in range(len(values1)):
+        combined_values.append((values1[i], values2[i], values3[i], values4[i], values5[i], values6[i]))
+    return combined_values
+
+
+def run_combined_values(combined_values):
+    for value in combined_values:
+        # Do something with each value
+        print(value)
+
+
+# Generate random values
+n = 65
+values1 = generate_random_values(n)
+values2 = generate_random_values(n)
+values3 = generate_random_values(n)
+values4 = generate_random_values(n)
+values5 = generate_random_values(n)
+values6 = generate_random_values(n)
+combined_values = combine_values(values1, values2, values3, values4, values5, values6)
+
+# Set font properties
+font = FontProperties()
+font.set_family('serif')
+font.set_name('Times New Roman')
+font.set_size(8)
+
+# Generate line graph
+num_graphs = input("How many line graphs do you want to generate? ")
+if num_graphs.isdigit() and int(num_graphs) > 0:
+    num_graphs = int(num_graphs)
+    with PdfPages("StatusReport.pdf") as pdf:
+        for i in range(num_graphs):
+            values = [generate_random_values(n) for j in range(6)]
+            fig, ax = plt.subplots(figsize=(8.27, 11.69))
+            for i in range(len(values)):
+                ax.plot(range(1, n + 1), values[i], label=f'VIX Index {i + 1}')
+            ax.legend(prop=font)
+            ax.set_xlabel('Day Chart Time', fontproperties=font)
+            ax.set_ylabel('Volatility', fontproperties=font)
+            plt.title(f'Volatility Index {i+1}', fontproperties=font)
+            pdf.savefig(fig)
+
+    # Generate pages for combined values
+    num_pages = input("How many pages do you want in the report? ")
+    if num_pages.isdigit() and int(num_pages) > 0:
+        num_pages = int(num_pages)
+        num_rows = input("How many rows do you want on each page? ")
+        if num_rows.isdigit() and int(num_rows) > 0:
+            num_rows = int(num_rows)
+            num_values = num_pages * num_rows * 6
+            if num_values <= len(combined_values):
+                with PdfPages("StatusReport.pdf") as pdf:
+                    for i in range(num_pages):
+                        fig, ax = plt.subplots(figsize=(8.27, 11.69))
+                        ax.axis('off')
+                        ax.axis('tight')
+                        start_idx = i * num_rows * 6
+                        end_idx = (i + 1) * num_rows * 6
+                        data = combined_values[start_idx:end_idx]
+                        table_data = []
+                        for row in range(num_rows):
+                            row_data = []
+                            for col in range(6):
+                                if row * 6 + col < len(data):
+                                    row_data.append('{:.2f}'.format(data[row * 6 + col]))
+                                else:
+                                    row_data.append('')
+                            table_data.append(row_data)
+                        table = ax.table(cellText=table_data,
+                                         colLabels=['Col 1', 'Col 2', 'Col 3', 'Col 4', 'Col 5', 'Col 6'],
+                                         loc='center', cellLoc='center', cellColours=[[(1, 1, 1)] * 6])
+                        pdf.savefig(fig)
