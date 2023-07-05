@@ -168,3 +168,60 @@ combined_prediction = combine_predictions([predictions, new_predictions])  # Pas
 
 print(f"Combined Prediction: {combined_prediction:.2f}")
 print(f"Rating: {rating:.2f}")
+
+
+
+/// anoter one way to use changing step 7 ///
+
+# Step 7: Indicator Calculation
+def calculate_indicators(df):
+    # Calculate indicator 1 (Momentum Strategy)
+    length = 12
+    df['mom0'] = df['close'] - df['close'].shift(length)
+    df['mom1'] = df['mom0'] - df['mom0'].shift(1)
+    
+    # Calculate indicator 2 (ADX Breakout)
+    adxSmoothPeriod = 14
+    adxPeriod = 14
+    adxLowerLevel = 18
+
+    def dirmov(len):
+        up = df['high'].diff(len)
+        down = -df['low'].diff(len)
+        truerange = up.combine(down, lambda x1, x2: max(x1, -x2))
+        plus = (up > down) & (up > 0)
+        minus = (down > up) & (down > 0)
+        plus = (plus * up).rolling(len).mean() / truerange.rolling(len).mean() * 100
+        minus = (minus * down).rolling(len).mean() / truerange.rolling(len).mean() * 100
+        return plus, minus
+
+    def adx(dilen, adxlen):
+        plus, minus = dirmov(dilen)
+        sum = plus + minus
+        adx = (abs(plus - minus) / np.where(sum == 0, 1, sum)).rolling(adxlen).mean() * 100
+        return adx
+
+    def adxHigh(dilen, adxlen):
+        plus, _ = dirmov(dilen)
+        return plus
+
+    def adxLow(dilen, adxlen):
+        _, minus = dirmov(dilen)
+        return minus
+
+    sig = adx(adxSmoothPeriod, adxPeriod)
+    isADXLow = sig < adxLowerLevel
+    
+    # Set box around highs and lows of the last 20 candles with upper and lower boundaries
+    boxLookBack = 20
+    df['boxUpperLevel'] = df['high'].rolling(boxLookBack).max().shift(1)
+    df['boxLowerLevel'] = df['low'].rolling(boxLookBack).min().shift(1)
+    
+    # Calculate box width and profit target/stop loss
+    profitTargetMultiple = 1
+    stopLossMultiple = 0.5
+    boxWidth = df['boxUpperLevel'] - df['boxLowerLevel']
+    df['profitTarget'] = np.where(df['position_size'] > 0, df['position_avg_price'] + profitTargetMultiple * boxWidth, np.nan)
+    df['stopLoss'] = np.where(df['position_size'] > 0, df['position_avg_price'] - stopLossMultiple * boxWidth, np.nan)
+    
+    return df
