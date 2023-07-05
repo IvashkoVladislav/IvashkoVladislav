@@ -1,0 +1,245 @@
+import requests
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+# Step 1: Data Collection
+def collect_data(symbol):
+    url = f'https://api.example.com/data?symbol={symbol}'
+    response = requests.get(url)
+    data = response.json()
+    df = pd.DataFrame(data)  # Assuming the data is in a tabular format
+    return df
+
+# Step 2: Data Preprocessing (if needed)
+# Perform any necessary data cleaning, preprocessing, or feature engineering
+
+# Step 3: Exploratory Data Analysis (if needed)
+# Analyze the data, visualize patterns, trends, and correlations using plots and charts
+
+# Step 4: Feature Selection (if needed)
+# Select the most relevant features for predicting price movement
+
+# Step 5: Model Building
+def build_model(df):
+    X = df.drop('target_variable', axis=1)  # Assuming 'target_variable' is the column indicating price movement
+    y = df['target_variable']
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Build the logistic regression model
+    model = LogisticRegression()
+    model.fit(X_train, y_train)
+
+    return model
+
+# Step 6: Model Evaluation (if needed)
+# Evaluate the model using appropriate evaluation metrics
+
+# Step 7: Indicator Calculation
+def calculate_indicators(df):
+    # Calculate indicator 1
+    length = 12
+    df['mom0'] = df['close'] - df['close'].shift(length)
+    df['mom1'] = df['mom0'] - df['mom0'].shift(1)
+    
+    # Calculate indicator 2
+    adxSmoothPeriod = 14
+    adxPeriod = 14
+    adxLowerLevel = 18
+    dirmov = lambda len: (100 * pd.Series((df['high'].diff(len).abs() > df['low'].diff(len).abs()) & (df['high'].diff(len) > 0)).rolling(len).sum() / pd.Series((df['low'].diff(len).abs() > df['high'].diff(len).abs()) & (df['low'].diff(len) > 0)).rolling(len).sum())).fillna(0)
+    df['plus'] = dirmov(1)
+    df['minus'] = dirmov(1)
+    sum = df['plus'] + df['minus']
+    df['adx'] = (100 * abs(df['plus'] - df['minus']) / np.where(sum == 0, 1, sum)).fillna(0)
+    isADXLow = df['adx'] < adxLowerLevel
+    
+    # Calculate indicator 3
+    length = 5
+    numATRs = 0.75
+    atrs = df['tr'].rolling(length).mean() * numATRs
+    df['vltClsLE'] = df['close'] + atrs
+    df['vltClsSE'] = df['close'] - atrs
+    
+    return df
+
+def get_rating(symbol):
+    # Implement the logic to get the rating values for the given symbol using the second indicator script
+    # You may need to use an API or a library that provides the indicator ratings
+    
+    # For demonstration purposes, return random values between -1 and 1
+    return np.random.uniform(-1, 1)
+
+# Step 8: Prepare New Data with Indicators
+def prepare_new_data_with_indicators(new_data):
+    # Perform the necessary data preprocessing and feature engineering for the new data
+    # Calculate the indicators for the new data
+    
+    # Assuming the new data is in a DataFrame format with columns: 'open', 'high', 'low', 'close', 'tr'
+    new_data = calculate_indicators(new_data)
+    
+    return new_data
+
+# Step 9: Predict Price Movement
+def predict_price_movement(symbol):
+    # Collect the data
+    df = collect_data(symbol)
+
+    # Calculate the indicators
+    df = calculate_indicators(df)
+
+    # Build the model
+    model = build_model(df)
+
+    # Make predictions for the existing data
+    predictions = model.predict(df.drop('target_variable', axis=1))
+    accuracy = accuracy_score(df['target_variable'], predictions)
+
+    # Get the rating value using the second indicator script
+    rating = get_rating(symbol)
+
+    return accuracy, rating
+
+# Example usage:
+crypto_symbol = 'BTC'
+accuracy, rating = predict_price_movement(crypto_symbol)
+
+print(f"Accuracy: {accuracy:.2f}")
+print(f"Rating: {rating:.2f}")
+
+
+
+/// Also another logic is able to use ///
+
+
+import requests
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+# Step 1: Data Collection
+def collect_data(symbol):
+    url = f'https://api.example.com/data?symbol={symbol}'
+    response = requests.get(url)
+    data = response.json()
+    df = pd.DataFrame(data)  # Assuming the data is in a tabular format
+    return df
+
+# Step 2: Data Preprocessing (if needed)
+# Perform any necessary data cleaning, preprocessing, or feature engineering
+
+# Step 3: Exploratory Data Analysis (if needed)
+# Analyze the data, visualize patterns, trends, and correlations using plots and charts
+
+# Step 4: Feature Selection (if needed)
+# Select the most relevant features for predicting price movement
+
+# Step 5: Model Building
+def build_model(df):
+    X = df.drop('target_variable', axis=1)  # Assuming 'target_variable' is the column indicating price movement
+    y = df['target_variable']
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Build the logistic regression model
+    model = LogisticRegression()
+    model.fit(X_train, y_train)
+
+    return model
+
+# Step 6: Model Evaluation (if needed)
+# Evaluate the model using appropriate evaluation metrics
+
+# Step 7: Indicator Calculation
+def calculate_indicators(df):
+    consecutiveBarsUp = 3
+    consecutiveBarsDown = 3
+    price = df['close']
+    ups = np.zeros_like(price)
+    dns = np.zeros_like(price)
+    ratingTotal = np.zeros_like(price)
+    ratingOther = np.zeros_like(price)
+    ratingMA = np.zeros_like(price)
+
+    for i in range(1, len(price)):
+        if price[i] > price[i-1]:
+            ups[i] = ups[i-1] + 1
+        else:
+            ups[i] = 0
+
+        if price[i] < price[i-1]:
+            dns[i] = dns[i-1] + 1
+        else:
+            dns[i] = 0
+
+        # Calculate the ratings for each data point
+        ratingTotal[i], ratingOther[i], ratingMA[i] = get_rating(df['symbol'][i])
+
+    # Add the indicator columns to the DataFrame
+    df['indicator1'] = np.where(ups >= consecutiveBarsUp, 1, np.where(dns >= consecutiveBarsDown, -1, 0))
+    df['indicator2'] = ratingTotal
+
+    return df
+
+def get_rating(symbol):
+    # Implement the logic to get the rating values for the given symbol using the second indicator script
+    # You may need to use an API or a library that provides the indicator ratings
+    
+    # For demonstration purposes, return random values between -1 and 1
+    return np.random.uniform(-1, 1), np.random.uniform(-1, 1), np.random.uniform(-1, 1)
+
+# Step 8: User Input and Prediction
+crypto_symbol = input("Enter the symbol of the cryptocurrency: ")
+
+# Collect data for the given symbol
+crypto_data = collect_data(crypto_symbol)
+
+# Calculate the indicators
+crypto_data = calculate_indicators(crypto_data)
+
+# Combine the indicators and other features for prediction
+features = crypto_data[['indicator1', 'indicator2', 'other_features']]  # Replace 'other_features' with the actual relevant features
+
+# Build the prediction model
+crypto_model = build_model(features)
+
+# Prepare new data for prediction (e.g., data for the next week) with the indicators and other features
+def prepare_new_data_with_indicators(indicator1_values, indicator2_values, other_feature_values):
+    new_data = pd.DataFrame({
+        'indicator1': indicator1_values,
+        'indicator2': indicator2_values,
+        'other_features': other_feature_values
+    })
+    return new_data
+
+# Specify the values for the indicators and other features of the new data
+indicator1_values = np.random.rand(10)
+indicator2_values = np.random.rand(10)
+other_feature_values = np.random.rand(10)
+
+# Prepare new data with indicators for prediction
+new_data = prepare_new_data_with_indicators(indicator1_values, indicator2_values, other_feature_values)
+
+# Make predictions on the new data
+prediction = crypto_model.predict(new_data)
+probability = crypto_model.predict_proba(new_data)
+
+# Display the prediction results
+if prediction[0] == 1:
+    movement = 'up'
+else:
+    movement = 'down'
+
+print(f"The predicted price movement for {crypto_symbol} in the next week is {movement}.")
+print(f"The probability of price increase is {probability[0][1] * 100:.2f}%.")
+
+
+
+
+
