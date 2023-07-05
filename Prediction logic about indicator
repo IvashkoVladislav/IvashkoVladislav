@@ -1,0 +1,170 @@
+import requests
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+# Step 1: Data Collection
+def collect_data(symbol):
+    url = f'https://api.example.com/data?symbol={symbol}'
+    response = requests.get(url)
+    data = response.json()
+    df = pd.DataFrame(data)  # Assuming the data is in a tabular format
+    return df
+
+# Step 2: Data Preprocessing (if needed)
+# Perform any necessary data cleaning, preprocessing, or feature engineering
+
+# Step 3: Exploratory Data Analysis (if needed)
+# Analyze the data, visualize patterns, trends, and correlations using plots and charts
+
+# Step 4: Feature Selection (if needed)
+# Select the most relevant features for predicting price movement
+
+# Step 5: Model Building
+def build_model(df):
+    X = df.drop('target_variable', axis=1)  # Assuming 'target_variable' is the column indicating price movement
+    y = df['target_variable']
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Build the logistic regression model
+    model = LogisticRegression()
+    model.fit(X_train, y_train)
+
+    return model
+
+# Step 6: Model Evaluation (if needed)
+# Evaluate the model using appropriate evaluation metrics
+
+# Step 7: Indicator Calculation
+def calculate_indicators(df):
+    # Calculate indicator 1 (Momentum Strategy)
+    length = 12
+    df['mom0'] = df['close'] - df['close'].shift(length)
+    df['mom1'] = df['mom0'] - df['mom0'].shift(1)
+    
+    # Calculate indicator 2 (ADX Breakout)
+    adxSmoothPeriod = 14
+    adxPeriod = 14
+    adxLowerLevel = 18
+    profitTargetMultiple = 1
+    stopLossMultiple = 0.5
+    boxLookBack = 20
+    enableDirection = 0
+    
+    dirmov = lambda len: (100 * pd.Series((df['high'].diff(len).abs() > df['low'].diff(len).abs()) & (df['high'].diff(len) > 0)).rolling(len).sum() / pd.Series((df['low'].diff(len).abs() > df['high'].diff(len).abs()) & (df['low'].diff(len) > 0)).rolling(len).sum())).fillna(0)
+    
+    def adx(dilen, adxlen):
+        [plus, minus] = dirmov(dilen)
+        sum = plus + minus
+        adx = 100 * pd.Series(abs(plus - minus) / np.where(sum == 0, 1, sum)).rolling(adxlen).mean().fillna(0)
+        return adx
+    
+    sig = adx(adxSmoothPeriod, adxPeriod)
+    isADXLow = sig < adxLowerLevel
+    
+    boxUpperLevel = df['high'].rolling(boxLookBack).max()
+    boxLowerLevel = df['low'].rolling(boxLookBack).min()
+    boxWidth = boxUpperLevel - boxLowerLevel
+    
+    profitTarget = df['close'] + profitTargetMultiple * boxWidth
+    stopLoss = df['close'] - stopLossMultiple * boxWidth
+    
+    df['isBuyValid'] = ((df['close'] > boxUpperLevel) & isADXLow).astype(int)
+    df['isSellValid'] = ((df['close'] < boxLowerLevel) & isADXLow).astype(int)
+    df['boxUpperLevel'] = boxUpperLevel
+    df['boxLowerLevel'] = boxLowerLevel
+    df['profitTarget'] = profitTarget
+    df['stopLoss'] = stopLoss
+    
+    return df
+
+# Step 8: Get the Rating
+def get_rating(symbol):
+    # Implement the logic to get the rating values for the given symbol using the second indicator script
+    # Create and Use an API or a library that provides the indicator's rating
+    
+    # Placeholder code - Randomly generate rating values between -1 and 1
+    return np.random.uniform(-1, 1)
+
+# Step 9: Prepare New Data with Indicators
+def prepare_new_data_with_indicators(new_data):
+    # Perform the necessary data preprocessing and feature engineering for the new data
+    # Calculate the indicators for the new data
+    
+    # Assuming the new data is in a DataFrame format with columns: 'open', 'high', 'low', 'close', 'tr'
+    new_data = calculate_indicators(new_data)
+    
+    return new_data
+
+# Step 10: Predict Price Movement
+def predict_price_movement(symbol):
+    # Collect the data
+    df = collect_data(symbol)
+
+    # Calculate the indicators
+    df = calculate_indicators(df)
+
+    # Build the model
+    model = build_model(df)
+
+    # Make predictions for the existing data
+    predictions = model.predict(df.drop('target_variable', axis=1))
+    accuracy = accuracy_score(df['target_variable'], predictions)
+
+    # Get the rating value using the second indicator script
+    rating = get_rating(symbol)
+
+    return accuracy, rating
+
+# Step 11: Combine Predictions from Different Indicators
+def combine_predictions(predictions):
+    # Combine the predictions from different indicators using your desired logic
+    
+    # Placeholder code - Simple average of predictions
+    combined_prediction = np.mean(predictions)
+    
+    return combined_prediction
+
+# Example usage:
+crypto_symbol = 'BTC'
+
+# Step 1: Collect the data
+df = collect_data(crypto_symbol)
+
+# Step 2: Data Preprocessing (if needed)
+# Perform any necessary data cleaning, preprocessing, or feature engineering
+
+# Step 3: Exploratory Data Analysis (if needed)
+# Analyze the data, visualize patterns, trends, and correlations using plots and charts
+
+# Step 4: Feature Selection (if needed)
+# Select the most relevant features for predicting price movement
+
+# Step 5: Build the model
+model = build_model(df)
+
+# Step 6: Model Evaluation (if needed)
+# Evaluate the model using appropriate evaluation metrics
+
+# Step 7: Calculate indicators for the existing data
+df = calculate_indicators(df)
+
+# Step 8: Get the rating value
+rating = get_rating(crypto_symbol)
+
+# Step 9: Prepare new data with indicators
+new_data = pd.DataFrame(...)  # Create a new DataFrame with the new data
+new_data_with_indicators = prepare_new_data_with_indicators(new_data)
+
+# Step 10: Make predictions for the new data
+new_predictions = model.predict(new_data_with_indicators.drop('target_variable', axis=1))
+
+# Step 11: Combine predictions from different indicators
+combined_prediction = combine_predictions([predictions, new_predictions])  # Pass the list of predictions from different indicators
+
+print(f"Combined Prediction: {combined_prediction:.2f}")
+print(f"Rating: {rating:.2f}")
