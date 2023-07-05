@@ -1,0 +1,83 @@
+/// This code doesnt have any sense it was created only one purpose make a report with random values in the spreadsheet user also able to chose how many pages, rows, columns and etc. ///
+
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, PageBreak
+from random import uniform
+
+def generate_random_numbers(num_rows, num_cols, min_value, max_value):
+    """
+    Generate a 2D list of random fractional numbers within the specified range.
+    """
+    random_numbers = []
+    for _ in range(num_rows):
+        row = [uniform(min_value, max_value) for _ in range(num_cols)]
+        random_numbers.append(row)
+    return random_numbers
+
+def generate_pdf(num_pages, num_rows, num_cols):
+    """
+    Generate a PDF file with random numbers displayed in a spreadsheet format.
+    """
+    doc = SimpleDocTemplate("StatusReport.pdf", pagesize=letter)
+    elements = []
+
+    # Prompt user for the range of random values
+    min_value = float(input("Enter the minimum value for random numbers: "))
+    max_value = float(input("Enter the maximum value for random numbers: "))
+
+    # Prompt user for column names
+    column_names = []
+    for i in range(num_cols):
+        name = input("Enter the name for Column {}: ".format(i + 1))
+        column_names.append(name)
+
+    # Generate random numbers
+    random_numbers = generate_random_numbers(num_rows, num_cols, min_value, max_value)
+
+    # Create table data with column names
+    data = [column_names]
+    data.extend(random_numbers)
+
+    # Set font properties
+    styles = getSampleStyleSheet()
+    table_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, -1), styles['Normal'].fontName),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ])
+
+    # Create table and table style
+    table = Table(data)
+    table.setStyle(table_style)
+
+    # Add table to elements list
+    elements.append(table)
+
+    # Add page breaks for additional pages
+    for _ in range(num_pages - 1):
+        elements.append(PageBreak())
+        elements.append(table)
+
+    # Build the PDF file
+    doc.build(elements)
+
+# Prompt user for number of pages, rows, and columns
+num_pages = int(input("Enter the number of pages: "))
+num_rows = int(input("Enter the number of rows: "))
+num_cols = int(input("Enter the number of columns: "))
+
+# Generate the PDF file
+generate_pdf(num_pages, num_rows, num_cols)
