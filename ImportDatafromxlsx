@@ -1,0 +1,106 @@
+###
+   #     'Gold_Stocks.xlsx',
+   #     'Silver_Stocks.xlsx',
+   #     'Copper_Stocks.xlsx',
+  #      'PA-PL_Stck_Rprt.xlsx',
+  #      'Aluminum_Stocks.xlsx',
+ #       'Zinc_Stocks.xlsx'
+###
+import requests
+import pandas as pd
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from bs4 import BeautifulSoup
+
+# Step 1: Download the Excel files
+def download_excel_files(file_urls):
+    for file_url in file_urls:
+        response = requests.get(file_url)
+        filename = file_url.split('/')[-1]
+        with open(filename, 'wb') as file:
+            file.write(response.content)
+
+file_urls = [
+    'https://www.cmegroup.com/delivery_reports/Gold_Stocks.xlsx',
+    'https://www.cmegroup.com/delivery_reports/Silver_Stocks.xlsx',
+    'https://www.cmegroup.com/delivery_reports/Copper_Stocks.xlsx',
+    'https://www.cmegroup.com/delivery_reports/PA-PL_Stck_Rprt.xlsx',
+    'https://www.cmegroup.com/delivery_reports/Aluminum_Stocks.xlsx',
+    'https://www.cmegroup.com/delivery_reports/Zinc_Stocks.xlsx'
+]
+
+download_excel_files(file_urls)
+
+
+# Step 2: Extract data from the Excel files
+def extract_data_from_excel_files(file_paths, cell_coordinates):
+    extracted_data = []
+
+    for file_path, cell_coordinate in zip(file_paths, cell_coordinates):
+        # Read the Excel file using pandas
+        df = pd.read_excel(file_path, header=None)
+
+        # Extract the cell value based on the provided coordinates
+        cell_value = df.loc[cell_coordinate].values[0]
+        extracted_data.append(cell_value)
+
+    return extracted_data
+
+# Step 3: Store the extracted data in a Google Spreadsheet
+def store_data_in_google_spreadsheet(data):
+    # Authenticate and connect to Google Sheets
+    scope = ['https://www.googleapis.com/auth/spreadsheets']
+    credentials = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+    client = gspread.authorize(credentials)
+
+    # Open the desired spreadsheet
+    spreadsheet = client.open('Your Spreadsheet Name')
+
+    # Select the appropriate sheet within the spreadsheet
+    sheet = spreadsheet.sheet1
+
+    # Clear the existing data in the sheet (optional)
+    sheet.clear()
+
+    # Insert the extracted data into the spreadsheet
+    # Adjust the range where you want to insert the data
+    sheet.update('A1', [data])
+
+# Main function to execute the automation
+def automate_task():
+    # Step 1: Download the Excel files
+    file_urls = [
+        'https://www.cmegroup.com/delivery_reports/Gold_Stocks.xlsx',
+        'https://www.cmegroup.com/delivery_reports/Silver_Stocks.xlsx',
+        'https://www.cmegroup.com/delivery_reports/Copper_Stocks.xlsx',
+        'https://www.cmegroup.com/delivery_reports/PA-PL_Stck_Rprt.xlsx',
+        'https://www.cmegroup.com/delivery_reports/Aluminum_Stocks.xlsx',
+        'https://www.cmegroup.com/delivery_reports/Zinc_Stocks.xlsx'
+    ]
+    download_excel_files(file_urls)
+
+    # Step 2: Extract data from the Excel files
+    file_paths = [
+        'Gold_Stocks.xlsx',
+        'Silver_Stocks.xlsx',
+        'Copper_Stocks.xlsx',
+        'PA-PL_Stck_Rprt.xlsx',
+        'Aluminum_Stocks.xlsx',
+        'Zinc_Stocks.xlsx'
+    ]
+    cell_coordinates = [
+        'A1',
+        'B2',
+        'C3',
+        'D4',
+        'E5',
+        'F6'
+    ]
+    extracted_data = extract_data_from_excel_files(file_paths, cell_coordinates)
+
+    # Step 3: Store the extracted data in a Google Spreadsheet
+    store_data_in_google_spreadsheet(extracted_data)
+
+# Execute the automation
+automate_task()
+
